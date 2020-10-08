@@ -1,0 +1,43 @@
+version: '3.7'
+
+services: 
+  viiru-home-api:
+    build: ./services/viiru-home-api
+    command: python manage.py run -h 0.0.0.0
+    volumes:
+      - ./services/viiru-home-api/:/usr/src/viiru-home-api/
+    ports: 
+      - 5000:5000
+    env_file: 
+      - ./services/viiru-home-api/.env.dev
+    depends_on: 
+      - database
+  viiru-home-spa:
+    build: ./services/viiru-home-spa
+    volumes:
+      - './services/viiru-home-spa:/usr/src/viiru-home-spa'
+      - '/usr/src/viiru-home-spa/node_modules'
+    expose: 
+      - 8080
+  database:
+    image: postgres:12-alpine
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    environment: 
+      - POSTGRES_USER=${VIIRU_HOME_DATABASE_USER_DEV}
+      - POSTGRES_PASSWORD=${VIIRU_HOME_DATABASE_PASSWORD_DEV}
+      - POSTGRES_DB=${VIIRU_HOME_DATABASE_NAME_DEV}
+    ports:
+      - 5432:5432
+  nginx: 
+    build: 
+      context: ./services/nginx
+      dockerfile: Dockerfile.dev
+    ports:
+      - 1337:80
+    depends_on: 
+      - viiru-home-api
+      - viiru-home-spa
+  
+volumes:
+  postgres_data:
